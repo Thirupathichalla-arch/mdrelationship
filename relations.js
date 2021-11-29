@@ -1,260 +1,324 @@
 const express = require("express");
-const mongoose=require("mongoose")
 
-let users = require("./MOCK_DATA.json");
+const mongoose = require("mongoose");
 
 
-const connect=() =>{
-    return mongoose.connect("mongodb://127.0.0.1:27017/test");
-};
-//--------userdata----
-const userSchema=new mongoose.Schema({
-    first_name:{type: String,required:true},
-    last_name:{type:String,required:false},
-    email:{type:String,required:true,unique:true},
-    gender:{type:String,required:false,default:"Male"},
-    age:{type:Number,required:true},
-});
-
-const User=mongoose.model("user",userSchema);
-
-//------postdata----
-const postSchema=new mongoose.Schema({
-    title:{ type:String,required:true},
-    body:{ type:String,required:true},
-    user_id:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"user",
-        required:true,
-    },
-    tag_id:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"tag",
-        required:true,
-    }
-
-});
-const Post=mongoose.model("post",postSchema)
-
-//------commentdata----
-const  commentSchema=new mongoose.Schema({
-    body:{type:String,required:true},
-    
-    user_id:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"user",
-        required:true,
-    },
-    post_id:{
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"post",
-        required:true,
-    }
-});
-const Comment=mongoose.model("comment",commentSchema)
-//------tagdata----
-const  tagSchema=new mongoose.Schema({
-    name:{type:String,required:true},
-});
-const Tag=mongoose.model("tag",tagSchema)
-
+const connect = () => {
+    return mongoose.connect("mongodb://127.0.0.1:27017/library")
+}
 const app = express();
 app.use(express.json());
 
 
-//=======userdata=========
+//SECTION SCHEMA
+const sectionSchema = new mongoose.Schema({
+    name: { type: String, required: true , unique:true }
+}, {
+    versionKey: false,
+    timestamps: true,
+})
 
-app.post("/users", async(req,res)=>{
-    try{
-    const user=await User.create(req.body);
-    res.status(201).send(user);
-    }catch(e){
-        res.status(500).json({status:e.message});
-    }
-});
+const Section = mongoose.model("sections", sectionSchema);
 
-app.get("/users", async(req,res)=>{
-    const users=await User.find({email:"a@a.com"}).lean().exec();
-    res.send({users});
-});
-app.get("/users/:id", async(req,res)=>{
-    try{
-        const user=await User.findById(req.params.id);
-        res.send({user});
-    }
-    catch(e){
-        res.status(500).json({status:e.message});
-    }
+//SECTION CRUD
 
-});
-app.patch("/users/:id",async(req,res)=>{
-        try{
-const user=await User.findByIdAndUpdate(req.params.id, req.body,{ new:true,
-            })
-            .lean().exec();
-            return res.status(201).send(user);
-        }catch(e){
-            return res.status(500).json({message:e.message,status:"failed"});
-        }
-    });
-   
-app.delete("/users/:id",async(req,res)=>{
-    try{
-    const user=await User.findOneAndDelete(req.params.id).lean().exec();
-    res.status(200).send(user);
-    }catch(e){
-    return res.status(500).json({message:e.message,status:"failed"});
-}
-});
-
-//=======tagdata=========
-
-app.post("/tags", async(req,res)=>{
-    try{
-    const tag=await Tag.create(req.body);
-    res.status(201).send(tag);
-    }catch(e){
-        res.status(500).json({status:e.message});
-    }
-});
-
-app.get("/tags", async(req,res)=>{
-    const tags=await Tag.find({email:"a@a.com"}).lean().exec();
-    res.send({tags});
-});
-app.get("/tags/:id", async(req,res)=>{
-    try{
-        const tag=await Tag.findById(req.params.id);
-        res.send({tag});
-    }
-    catch(e){
-        res.status(500).json({status:e.message});
-    }
-
-});
-app.patch("/tags/:id",async(req,res)=>{
-        try{
-const tag=await Tag.findByIdAndUpdate(req.params.id, req.body,{ new:true,
-            })
-            .lean().exec();
-            return res.status(201).send(tag);
-        }catch(e){
-            return res.status(500).json({message:e.message,status:"failed"});
-        }
-    });
-   
-app.delete("/tags/:id",async(req,res)=>{
-    try{
-    const tag=await Tag.findOneAndDelete(req.params.id).lean().exec();
-    res.status(200).send(tag);
-    }catch(e){
-    return res.status(500).json({message:e.message,status:"failed"});
-}
-});
-app.get("/tags/:id/posts", async (req, res) => {
+app.post("/section", async (req, res) => {
     try {
-      const tag = await Tag.findById(req.params.id).lean().exec();
-      const posts = await Post.find({ tag_ids: tag._id })
-        .populate("tag_ids")
-        .lean()
-        .exec();
-  
-      return res.status(200).send({ posts, tag });
+        const sectionList = await Section.create(req.body);
+        return res.status(201).send(sectionList);
+    }
+    catch (e) {
+        return res.status(500).json({ "status": e.message });
+    }
+})
+app.get("/sections", async (req, res) => {
+    try {
+        const sectionList = await Section.find().lean().exec();
+        return res.send({ sectionList });
+    }
+    catch (e) {
+        return res.status(500).json({ "status": e.message });
+    }
+})
+app.get("/sections/:id", async (req, res) => {
+    try {
+        const sectionList = await Section.findById(req.params.id).lean().exec();
+        return res.json(sectionList);
     } catch (e) {
-      return res.status(500).json({ message: e.message, status: "Failed" });
+        return res.status(500).json({"status":e.message});
     }
-  });
+})
+app.patch("/sections/:id", async (req, res) => {
+    try {
+        const sectionList = await Section.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean().exec();
+        return res.status(201).send(sectionList);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
+    }
+})
+app.delete("/sections/:id", async (req, res) => {
+    try {
+        const sectionList = await Section.findByIdAndDelete(req.params.id).lean().exec();
+        return res.status(200).send(sectionList);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
+    }
+})
 
-//==========postschema====
+//AUTHOR STARTS HERE
+
+//AUTHOR SCHEMA
+
+const authorSchema = new mongoose.Schema({
+    first_name: { type: String, required: true },
+    last_name : {type:String ,required:true }
+}, {
+    versionKey: false,
+    timestamps:true,
+})
+//Author crud
+
+const Author = mongoose.model("author", authorSchema);
+
+app.post("/author", async (req, res) => {
+    try {
+        const author = await Author.create(req.body);
+        return res.status(201).send(author);
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.get("/authors", async (req, res) => {
+    try {
+        const authorsData = await Author.find().lean().exec();
+        return res.send({authorsData})
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.get("/authors/:id", async (req, res) => {
+    try {
+        const author = await Author.findById(req.params.id).lean().exec();
+        return res.json(author);
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.patch("/authors/:id", async (req, res) => {
+    try {
+        const author = await Author.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean().exec();
+        return res.status(201).send(author);
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.delete("/authors/:id", async (req, res) => {
+    try {
+        const author = await Author.findByIdAndDelete(req.params.id).lean().exec();
+        return res.status(200).send(author);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
+    }
+})
+//Books starts here
+
+//Books schema
+
+const bookSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    body: { type: String, required: true },
+    author_ids: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "author",
+        required: true,
+    }],
+    section_ids: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "sections",
+        required: true,
+    }
+}, {
+    versionKey: false,
+    timestamps: true,
+});
+
+const Book = mongoose.model("book", bookSchema);
+
+app.post("/book", async (req, res) => {
+    try {
+        const book = await Book.create(req.body);
+        return res.status(201).send(book)
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.get("/books", async (req, res) => {
+    try {
+        const books = await Book.find().populate({ path: "author_ids", select:"first_name"+" "+"last_name"}).populate({path:"section_ids",select:"name"}).populate("author_ids").lean().exec();
+        return res.status(201).send(books)
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.get("/books/:id", async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id).populate({ path: "author_ids", select:"first_name"+" "+"last_name"}).lean().exec();
+        return res.status(201).send(book)
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.patch("/books/:id", async (req, res) => {
+    try {
+        const book = await Book.findByIdAndUpdate(req.params.id,req.body,{ new: true}).lean().exec();
+        return res.status(201).send(book);
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+
+app.delete("/books/:id", async (req, res) => {
+    try {
+        const book = await Book.findByIdAndDelete(req.params.id).lean().exec();
+        return res.status(200).send(book);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
+    }
+})
 
 
-app.post("/posts", async(req,res)=>{
-    try{
-    const post=await Post.create(req.body);
-    res.status(201).send(post);
-    }catch(e){
-        res.status(500).json({status:e.message});
+//checkout schema
+
+const checkoutSchema = new mongoose.Schema({
+    checkouts_name:{type:String ,required:true,unique:true},
+    bks_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "book",
+        required:true,
+    }
+}, {
+    versionKey:false,
+    timestamps:true,
+});
+
+const Checkout = mongoose.model("checkout", checkoutSchema);
+
+///checkout crud
+
+app.post("/checkout", async (req, res) => {
+    try
+    {
+        const checkout = await Checkout.create(req.body);
+        return res.status(201).send(checkout);
+    }
+    catch(e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+app.get("/checkouts", async (req, res) => {
+    try {
+        const checkout = await Checkout.find().populate({path :"bks_id",populate : {
+            path : 'author_ids',select:"first_name"+" "+"last_name",
+        }, populate: { path: "section_ids",select:"name" }}).lean().exec();
+        return res.send({ checkout });
+    }
+    catch (e) {
+        return res.status(500).send({"error":e});
+    }
+})
+
+app.get("/checkouts/:id", async (req, res) => {
+    try {
+        const data = await Checkout.findById(req.params.id).lean().exec();
+        return res.json(data);
+    } catch (e) {
+        return res.status(500).json({"status":e.message});
+    }
+})
+app.patch("/checkouts/:id", async(req, res) => {
+    try {
+        const checkout = await Checkout.findByIdAndUpdate(req.params.id, req.body,{ new: true,}).lean().exec();
+        return res.status(201).send(checkout);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
     }
 });
 
-app.get("/posts", async(req,res)=>{
-    const posts=await Post.find({email:"a@a.com"}).lean().exec();
-    res.send({posts});
-});
-app.get("/posts/:id", async(req,res)=>{
-    try{
-        const post=await Post.findById(req.params.id);
-        res.send({post});
+app.delete("/checkouts/:id", async (req, res) => {
+    try {
+        const checkout = await Checkout.findByIdAndDelete(req.params.id).lean().exec();
+        return res.status(200).send(checkout);
+    } catch (e) {
+        return res.status(500).json({ message: e.message,status:"Failed"});
     }
-    catch(e){
-        res.status(500).json({status:e.message});
-    }
+})
 
-});
-app.patch("/posts/:id",async(req,res)=>{
-        try{
-const post=await Post.findByIdAndUpdate(req.params.id, req.body,{ new:true,
-            })
-            .lean().exec();
-            return res.status(201).send(post);
-        }catch(e){
-            return res.status(500).json({message:e.message,status:"failed"});
-        }
-    });
-   
-app.delete("/posts/:id",async(req,res)=>{
-    try{
-    const post=await Post.findOneAndDelete(req.params.id).lean().exec();
-    res.status(200).send(post);
-    }catch(e){
-    return res.status(500).json({message:e.message,status:"failed"});
-}
-});
-
-//=======comentschema====
-app.post("/comments", async(req,res)=>{
-    try{
-    const comment=await Comment.create(req.body);
-    res.status(201).send(comment);
-    }catch(e){
-        res.status(500).json({status:e.message});
+app.get("/books/:id/checkouts", async (req, res) => {
+    try {
+        const books = await Book.findById(req.params.id).lean().exec();
+        const checkout = await Checkout.find({ bks_id: books._id }).populate({path :"bks_id",populate:{path:"author_ids",
+        }, populate: { path: "section_ids", select: "name" }, populate: { path: "author_ids", select:"first_name"+" "+"last_name"}}).lean().exec();
+        return res.status(201).send(checkout);
     }
-});
-
-app.get("/comments", async(req,res)=>{
-    const comments=await Comment.find({email:"a@a.com"}).lean().exec();
-    res.send({comments});
-});
-app.get("/comments/:id", async(req,res)=>{
-    try{
-        const comment=await Comment.findById(req.params.id);
-        res.send({comment});
+    catch (e) {
+        return res.status(500).json({ message: e.message, status: "Failed" });
     }
-    catch(e){
-        res.status(500).json({status:e.message});
-    }
+})
 
-});
-app.patch("/comments/:id",async(req,res)=>{
-        try{
-const comment=await Comment.findByIdAndUpdate(req.params.id, req.body,{ new:true,
-            })
-            .lean().exec();
-            return res.status(201).send(comment);
-        }catch(e){
-            return res.status(500).json({message:e.message,status:"failed"});
-        }
-    });
-   
-app.delete("/comments/:id",async(req,res)=>{
-    try{
-    const comment=await Comment.findOneAndDelete(req.params.id).lean().exec();
-    res.status(200).send(comment);
-    }catch(e){
-    return res.status(500).json({message:e.message,status:"failed"});
-}
-});
-app.listen(245,async function(){
+
+
+//books by author id
+
+app.get("/authors/:id/books", async (req, res) => {
+    try {
+        const author = await Author.findById(req.params.id).lean().exec();
+        const books = await Book.find({ author_ids: author._id }).populate({ path: "bks_id" }).populate({ path: "author_ids" ,select:"first_name"+" "+"last_name"}).populate({ path: "section_ids", select: "name" }).lean().exec();
+        return res.status(201).send(books);
+    }
+    catch (e) {
+        return res.status(500).json({ message: e.message, status: "Failed" });
+    }
+})
+
+//books by sectionswise
+
+app.get("/sections/:id/books", async (req, res) => {
+    try {
+        const section = await Section.findById(req.params.id).lean().exec();
+        const books = await Book.find({ section_ids: section._id }).populate({ path: "bks_id" }).populate({ path: "author_ids" ,select:"first_name"+" "+"last_name"}).populate({ path: "section_ids", select: "name" }).lean().exec();
+        return res.status(201).send(books);
+    }
+    catch (e) {
+        return res.status(500).json({ message: e.message, status: "Failed" });
+    }
+})
+                //authors length==1
+app.get("/books/authors/1", async (req, res) => {
+    try {
+        const singleAuthorBooks = await Book.find({ $where: 'this.author_ids.length==1' }).populate({ path:"section_ids",select:"name"}).populate({path:"author_ids",select:"first_name"+" "+"last_name"}).lean().exec();
+        return res.status(201).send(singleAuthorBooks);
+    }
+    catch (e) {
+        return res.status(501).json({ message: e.message, status: "Failed" });
+    }
+})
+
+app.listen(2345, async () => {
     await connect();
-    console.log("listening on port 245");
-});
+    console.log("listening on 2345 port")
+}) 
